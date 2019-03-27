@@ -7,6 +7,7 @@ const { createHash } = require('./utils');
 const writeFile = util.promisify(fs.writeFile);
 const readFile = util.promisify(fs.readFile);
 const unlink = util.promisify(fs.unlink);
+const mkdir = util.promisify(fs.mkdir);
 
 const app = express();
 app.use(bodyParser.json());
@@ -45,13 +46,14 @@ app.delete('/tasks', (req, res) => {
 });
 
 app.post('/tests', (req, res) => {
-  const hash = createHash(req.body.source);
-  writeFile(`./tests/${hash}.json`, JSON.stringify({ ...req.body, id: hash }))
-    .then(() => {
-      res.json({ id: hash, status: 'ok', statusCode: 1 });
-    })
+  const hash = createHash(JSON.stringify(req.body));
+  mkdir(`./tests/${hash}`).then(Promise.all(writeFile(`./tests/${hash}/input.txt`, req.body.input),
+    writeFile(`./tests/${hash}/output.txt`, req.body.output)))
     .catch((error) => {
       res.json({ error, status: 'error', statusCode: 0 });
+    })
+    .then(() => {
+      res.json({ id: hash, status: 'ok', statusCode: 1 });
     });
 });
 
