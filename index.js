@@ -1,13 +1,6 @@
-const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
-const util = require('util');
-const { createHash } = require('./utils');
-
-const writeFile = util.promisify(fs.writeFile);
-const readFile = util.promisify(fs.readFile);
-const unlink = util.promisify(fs.unlink);
-const mkdir = util.promisify(fs.mkdir);
+const { createHash, STATUS, writeFile, readFile, unlink, mkdir } = require('./utils');
 
 const app = express();
 app.use(bodyParser.json());
@@ -16,10 +9,10 @@ app.post('/tasks', (req, res) => {
   const hash = createHash(req.body.source);
   writeFile(`./tasks/${hash}.json`, JSON.stringify({ ...req.body, id: hash }))
     .then(() => {
-      res.json({ id: hash, status: 'ok', statusCode: 1 });
+      res.json({ id: hash, ...STATUS.ok });
     })
     .catch((error) => {
-      res.json({ error, status: 'error', statusCode: 0 });
+      res.json({ error, ...STATUS.error });
     });
 });
 
@@ -27,10 +20,10 @@ app.get('/tasks', (req, res) => {
   const { taskId } = req.body;
   readFile(`./tasks/${taskId}.json`, { encoding: 'utf8' })
     .then((data) => {
-      res.json({ ...JSON.parse(data), status: 'ok', statusCode: 1 });
+      res.json({ ...JSON.parse(data), ...STATUS.ok });
     })
     .catch((error) => {
-      res.json({ error, status: 'error', statusCode: 0 });
+      res.json({ error, ...STATUS.error });
     });
 });
 
@@ -38,10 +31,10 @@ app.delete('/tasks', (req, res) => {
   const { taskId } = req.body;
   unlink(`./tasks/${taskId}.json`)
     .then(() => {
-      res.json({ statusCode: 1 });
+      res.json({ ...STATUS.ok });
     })
     .catch((error) => {
-      res.json({ error, status: 'error', statusCode: 0 });
+      res.json({ error, ...STATUS.error });
     });
 });
 
@@ -50,10 +43,10 @@ app.post('/tests', (req, res) => {
   mkdir(`./tests/${hash}`).then(Promise.all(writeFile(`./tests/${hash}/input.txt`, req.body.input),
     writeFile(`./tests/${hash}/output.txt`, req.body.output)))
     .catch((error) => {
-      res.json({ error, status: 'error', statusCode: 0 });
+      res.json({ error, ...STATUS.error });
     })
     .then(() => {
-      res.json({ id: hash, status: 'ok', statusCode: 1 });
+      res.json({ id: hash, ...STATUS.ok });
     });
 });
 
@@ -61,10 +54,10 @@ app.get('/tests', (req, res) => {
   const { testId } = req.body;
   readFile(`./tests/${testId}.json`, { encoding: 'utf8' })
     .then((data) => {
-      res.json({ ...JSON.parse(data), status: 'ok', statusCode: 1 });
+      res.json({ ...JSON.parse(data), ...STATUS.ok });
     })
     .catch((error) => {
-      res.json({ error, status: 'error', statusCode: 0 });
+      res.json({ error, ...STATUS.error });
     });
 });
 
@@ -72,10 +65,10 @@ app.delete('/tests', (req, res) => {
   const { taskId } = req.body;
   unlink(`./tasks/${taskId}.json`)
     .then(() => {
-      res.json({ statusCode: 1 });
+      res.json({ ...STATUS.ok });
     })
     .catch((error) => {
-      res.json({ error, status: 'error', statusCode: 0 });
+      res.json({ error, ...STATUS.error });
     });
 });
 
