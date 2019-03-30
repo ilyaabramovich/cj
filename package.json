@@ -2,9 +2,10 @@
   "name": "master",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/master.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "lint": "eslint **/*.js"
   },
   "keywords": [],
   "author": "",
