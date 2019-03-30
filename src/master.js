@@ -10,9 +10,12 @@ app.use(bodyParser.json());
 
 const { ROOT_DIR } = process.env || './';
 
-app.post('/tasks', (req, res) => {
+app.post('/solutions', (req, res) => {
   const hash = createHash(req.body.source);
-  writeFile(path.join(ROOT_DIR, `./tasks/${hash}.json`), JSON.stringify({ ...req.body, id: hash }))
+  writeFile(
+    path.join(ROOT_DIR, `./solutions/${hash}.json`),
+    JSON.stringify({ ...req.body, id: hash }),
+  )
     .then(() => {
       res.json({ id: hash, ...STATUS.ok });
     })
@@ -21,9 +24,9 @@ app.post('/tasks', (req, res) => {
     });
 });
 
-app.get('/tasks', (req, res) => {
+app.get('/solutions', (req, res) => {
   const { taskId } = req.body;
-  readFile(path.join(ROOT_DIR, `./tasks/${taskId}.json`), { encoding: 'utf8' })
+  readFile(path.join(ROOT_DIR, `./solutions/${taskId}.json`), { encoding: 'utf8' })
     .then((data) => {
       res.json({ ...JSON.parse(data), ...STATUS.ok });
     })
@@ -32,9 +35,9 @@ app.get('/tasks', (req, res) => {
     });
 });
 
-app.delete('/tasks', (req, res) => {
+app.delete('/solutions', (req, res) => {
   const { taskId } = req.body;
-  unlink(path.join(ROOT_DIR, `./tasks/${taskId}.json`))
+  unlink(path.join(ROOT_DIR, `./solutions/${taskId}.json`))
     .then(() => {
       res.json({ ...STATUS.ok });
     })
