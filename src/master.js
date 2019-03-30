@@ -1,20 +1,18 @@
+const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const {
-  createHash,
-  STATUS,
-  writeFile,
-  readFile,
-  unlink,
-  mkdir,
+  createHash, STATUS, writeFile, readFile, unlink, mkdir,
 } = require('./utils');
 
 const app = express();
 app.use(bodyParser.json());
 
+const { ROOT_DIR } = process.env || './';
+
 app.post('/tasks', (req, res) => {
   const hash = createHash(req.body.source);
-  writeFile(`./tasks/${hash}.json`, JSON.stringify({ ...req.body, id: hash }))
+  writeFile(path.join(ROOT_DIR, `./tasks/${hash}.json`), JSON.stringify({ ...req.body, id: hash }))
     .then(() => {
       res.json({ id: hash, ...STATUS.ok });
     })
@@ -25,7 +23,7 @@ app.post('/tasks', (req, res) => {
 
 app.get('/tasks', (req, res) => {
   const { taskId } = req.body;
-  readFile(`./tasks/${taskId}.json`, { encoding: 'utf8' })
+  readFile(path.join(ROOT_DIR, `./tasks/${taskId}.json`), { encoding: 'utf8' })
     .then((data) => {
       res.json({ ...JSON.parse(data), ...STATUS.ok });
     })
@@ -36,7 +34,7 @@ app.get('/tasks', (req, res) => {
 
 app.delete('/tasks', (req, res) => {
   const { taskId } = req.body;
-  unlink(`./tasks/${taskId}.json`)
+  unlink(path.join(ROOT_DIR, `./tasks/${taskId}.json`))
     .then(() => {
       res.json({ ...STATUS.ok });
     })
@@ -47,11 +45,11 @@ app.delete('/tasks', (req, res) => {
 
 app.post('/tests', (req, res) => {
   const hash = createHash(JSON.stringify(req.body));
-  mkdir(`./tests/${hash}`)
+  mkdir(path.join(ROOT_DIR, `./tests/${hash}`))
     .then(
       Promise.all(
-        writeFile(`./tests/${hash}/input.txt`, req.body.input),
-        writeFile(`./tests/${hash}/output.txt`, req.body.output),
+        writeFile(path.join(ROOT_DIR, `./tests/${hash}/input.txt`), req.body.input),
+        writeFile(path.join(ROOT_DIR, `./tests/${hash}/output.txt`), req.body.output),
       ),
     )
     .catch((error) => {
@@ -64,7 +62,7 @@ app.post('/tests', (req, res) => {
 
 app.get('/tests', (req, res) => {
   const { testId } = req.body;
-  readFile(`./tests/${testId}.json`, { encoding: 'utf8' })
+  readFile(path.join(ROOT_DIR, `./tests/${testId}.json`), { encoding: 'utf8' })
     .then((data) => {
       res.json({ ...JSON.parse(data), ...STATUS.ok });
     })
@@ -74,8 +72,8 @@ app.get('/tests', (req, res) => {
 });
 
 app.delete('/tests', (req, res) => {
-  const { taskId } = req.body;
-  unlink(`./tasks/${taskId}.json`)
+  const { testId } = req.body;
+  unlink(path.join(ROOT_DIR, `./tests/${testId}.json`))
     .then(() => {
       res.json({ ...STATUS.ok });
     })
