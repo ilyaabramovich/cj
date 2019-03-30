@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 const crypto = require('crypto');
 const util = require('util');
@@ -14,10 +13,15 @@ const STATUS = {
 };
 
 const createHash = data => crypto
-  .createHash('sha1')
-  .update(data)
-  .digest('hex');
+    .createHash('sha1')
+    .update(data)
+    .digest('hex');
 
 module.exports = {
-  createHash, STATUS, writeFile, readFile, unlink, mkdir,
+  createHash,
+  STATUS,
+  writeFile,
+  readFile,
+  unlink,
+  mkdir,
 };
