@@ -1,11 +1,4 @@
-const fs = require('fs');
 const crypto = require('crypto');
-const util = require('util');
-
-const writeFile = util.promisify(fs.writeFile);
-const readFile = util.promisify(fs.readFile);
-const unlink = util.promisify(fs.unlink);
-const mkdir = util.promisify(fs.mkdir);
 
 const STATUS = {
   ok: { status: 'ok', statusCode: 0 },
@@ -20,8 +13,4 @@ const createHash = data => crypto
 module.exports = {
   createHash,
   STATUS,
-  writeFile,
-  readFile,
-  unlink,
-  mkdir,
 };
