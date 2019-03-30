@@ -13,9 +13,9 @@ const STATUS = {
 };
 
 const createHash = data => crypto
-    .createHash('sha1')
-    .update(data)
-    .digest('hex');
+  .createHash('sha1')
+  .update(data)
+  .digest('hex');
 
 module.exports = {
   createHash,

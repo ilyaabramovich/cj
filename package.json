@@ -5,7 +5,7 @@
   "main": "src/master.js",
   "scripts": {
     "start": "nodemon index.js",
-    "lint": "eslint **/*.js"
+    "lint": "eslint src/*.js"
   },
   "keywords": [],
   "author": "",

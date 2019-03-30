@@ -1,7 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const {
-  createHash, STATUS, writeFile, readFile, unlink, mkdir,
+  createHash,
+  STATUS,
+  writeFile,
+  readFile,
+  unlink,
+  mkdir,
 } = require('./utils');
 
 const app = express();
@@ -42,8 +47,13 @@ app.delete('/tasks', (req, res) => {
 
 app.post('/tests', (req, res) => {
   const hash = createHash(JSON.stringify(req.body));
-  mkdir(`./tests/${hash}`).then(Promise.all(writeFile(`./tests/${hash}/input.txt`, req.body.input),
-    writeFile(`./tests/${hash}/output.txt`, req.body.output)))
+  mkdir(`./tests/${hash}`)
+    .then(
+      Promise.all(
+        writeFile(`./tests/${hash}/input.txt`, req.body.input),
+        writeFile(`./tests/${hash}/output.txt`, req.body.output),
+      ),
+    )
     .catch((error) => {
       res.json({ error, ...STATUS.error });
     })
