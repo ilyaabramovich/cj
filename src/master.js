@@ -1,20 +1,28 @@
 const path = require('path');
 const {
-  writeFile, readFile, unlink, mkdir, symlink,
+  writeFile, readFile, unlink, mkdir, copyFile,
 } = require('fs').promises;
 const express = require('express');
 const bodyParser = require('body-parser');
-const { createHash, STATUS } = require('./utils');
+const {
+  createHash,
+  STATUS,
+  getSourcePath,
+  getMetaPath,
+  getTestInputPath,
+  getTestOutputPath,
+  getSolutionsDirPath,
+  getTestsDirPath,
+  getTasksDirPath,
+} = require('./utils');
 
 const app = express();
 app.use(bodyParser.json());
 
-const ROOT_DIR = './';
-
 app.post('/solutions', (req, res) => {
   const id = createHash(req.body.source);
-  const sourceFile = path.join(ROOT_DIR, `./solutions/${id}/Main.java`);
-  const metaFile = path.join(ROOT_DIR, `./solutions/${id}/meta.json`);
+  const sourceFile = getSourcePath(id);
+  const metaFile = getMetaPath(id);
   Promise.all([
     mkdir(path.dirname(sourceFile), { recursive: true }),
     writeFile(sourceFile, req.body.source),
@@ -31,7 +39,8 @@ app.post('/solutions', (req, res) => {
 
 app.get('/solutions', (req, res) => {
   const { id } = req.body;
-  readFile(path.join(ROOT_DIR, `./solutions/${id}/meta.json`), { encoding: 'utf8' })
+  const metaFile = getMetaPath(id);
+  readFile(metaFile, { encoding: 'utf8' })
     .then((data) => {
       res.send({ result: { ...JSON.parse(data) }, ...STATUS.ok });
     })
@@ -42,7 +51,7 @@ app.get('/solutions', (req, res) => {
 
 app.delete('/solutions', (req, res) => {
   const { id } = req.body;
-  unlink(path.join(ROOT_DIR, `./solutions/${id}.json`))
+  unlink(getSolutionsDirPath(id))
     .then(() => {
       res.send({ ...STATUS.ok });
     })
@@ -53,11 +62,11 @@ app.delete('/solutions', (req, res) => {
 
 app.post('/tests', (req, res) => {
   const id = createHash(JSON.stringify(req.body));
-  mkdir(path.join(ROOT_DIR, `./tests/${id}`), { recursive: true })
+  mkdir(getTestsDirPath(id), { recursive: true })
     .then(
       Promise.all(
-        writeFile(path.join(ROOT_DIR, `./tests/${id}/input.txt`), req.body.input),
-        writeFile(path.join(ROOT_DIR, `./tests/${id}/output.txt`), req.body.output),
+        writeFile(getTestInputPath(id), req.body.input),
+        writeFile(getTestOutputPath(id), req.body.output),
       ),
     )
     .catch((error) => {
@@ -70,7 +79,7 @@ app.post('/tests', (req, res) => {
 
 app.get('/tests', (req, res) => {
   const { id } = req.body;
-  readFile(path.join(ROOT_DIR, `./tests/${id}.json`), { encoding: 'utf8' })
+  readFile(getTestsDirPath(id), { encoding: 'utf8' })
     .then((data) => {
       res.send({ ...JSON.parse(data), ...STATUS.ok });
     })
@@ -81,7 +90,7 @@ app.get('/tests', (req, res) => {
 
 app.delete('/tests', (req, res) => {
   const { id } = req.body;
-  unlink(path.join(ROOT_DIR, `./tests/${id}.json`))
+  unlink(getTestsDirPath(id))
     .then(() => {
       res.send({ ...STATUS.ok });
     })
@@ -92,9 +101,16 @@ app.delete('/tests', (req, res) => {
 
 app.get('/run', (req, res) => {
   const { id } = req.body;
-  const file = path.join(ROOT_DIR, `./solutions/${id}.json`);
-  symlink(file);
-  res.send();
+  const sourceFile = getSourcePath(id);
+  const destDir = getTasksDirPath(id);
+  mkdir(destDir, { recursive: true });
+  copyFile(sourceFile, path.join(destDir, '/Main.java'))
+    .then(() => {
+      res.send({ ...STATUS.ok });
+    })
+    .catch((error) => {
+      res.send({ error, ...STATUS.error });
+    });
 });
 
 app.listen(3000, () => {
