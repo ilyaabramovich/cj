@@ -1,7 +1,8 @@
-const crypto = require('crypto');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT_DIR = './';
+const PORT = 3000;
 
 const STATUS = {
   ok: { status: 'ok', statusCode: 0 },
@@ -12,7 +13,7 @@ const getTasksDirPath = id => path.join(ROOT_DIR, `./tasks/${id}`);
 const getSolutionsDirPath = id => path.join(ROOT_DIR, `./solutions/${id}`);
 const getTestsDirPath = id => path.join(ROOT_DIR, `./tests/${id}`);
 const getSourcePath = id => path.join(getSolutionsDirPath(id), '/Main.java');
-const getMetaPath = id => path.join(getSolutionsDirPath(id), '/meta.json');
+const getMetaPath = id => path.join(getTasksDirPath(id), '/meta.json');
 const getTestInputPath = id => path.join(getTestsDirPath(id), '/input.txt');
 const getTestOutputPath = id => path.join(getTestsDirPath(id), '/output.txt');
 
@@ -31,4 +32,5 @@ module.exports = {
   getTestsDirPath,
   getTasksDirPath,
   STATUS,
+  PORT,
 };

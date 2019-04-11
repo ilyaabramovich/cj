@@ -5,8 +5,9 @@ const {
 const express = require('express');
 const bodyParser = require('body-parser');
 const {
-  createHash,
   STATUS,
+  PORT,
+  createHash,
   getSourcePath,
   getMetaPath,
   getTestInputPath,
@@ -20,34 +21,34 @@ const app = express();
 app.use(bodyParser.json());
 
 app.post('/solutions', (req, res) => {
-  const id = createHash(req.body.source);
+  const { source } = req.body;
+  const id = createHash(source);
   const sourceFile = getSourcePath(id);
-  const destDir = getTasksDirPath(id);
-  const metaFile = path.join(destDir, '/meta.json');
+  const metaFile = getMetaPath(id);
   Promise.all([
     mkdir(path.dirname(sourceFile), { recursive: true }),
     mkdir(path.dirname(metaFile), { recursive: true }),
   ])
     .then(
       Promise.all([
-        writeFile(sourceFile, req.body.source),
+        writeFile(sourceFile, source),
         writeFile(metaFile, JSON.stringify({ task: 'compile', lang: 'java' })),
       ]),
     )
-    .then(() => {
-      res.send({ result: { id }, ...STATUS.ok });
-    })
     .catch((error) => {
       res.send({ error, ...STATUS.error });
+    })
+    .then(() => {
+      res.send({ result: { id }, ...STATUS.ok });
     });
 });
 
 app.get('/solutions/:id', (req, res) => {
   const { id } = req.params;
   const metaFile = getMetaPath(id);
-  readFile(metaFile, { encoding: 'utf8' })
+  readFile(metaFile)
     .then((data) => {
-      res.send({ result: { ...JSON.parse(data) }, ...STATUS.ok });
+      res.send({ result: JSON.parse(data), ...STATUS.ok });
     })
     .catch((error) => {
       res.send({ error, ...STATUS.error });
@@ -66,27 +67,28 @@ app.delete('/solutions', (req, res) => {
 });
 
 app.post('/tests', (req, res) => {
-  const id = createHash(JSON.stringify(req.body));
+  const { input, output } = req.body;
+  const id = createHash(req.body);
   mkdir(getTestsDirPath(id), { recursive: true })
     .then(
-      Promise.all(
-        writeFile(getTestInputPath(id), req.body.input),
-        writeFile(getTestOutputPath(id), req.body.output),
-      ),
+      Promise.all([
+        writeFile(getTestInputPath(id), input),
+        writeFile(getTestOutputPath(id), output),
+      ]),
     )
     .catch((error) => {
       res.send({ error, ...STATUS.error });
     })
     .then(() => {
-      res.send({ id, ...STATUS.ok });
+      res.send({ result: { id }, ...STATUS.ok });
     });
 });
 
 app.get('/tests/:id', (req, res) => {
   const { id } = req.params;
-  readFile(getTestsDirPath(id), { encoding: 'utf8' })
+  readFile(getTestsDirPath(id))
     .then((data) => {
-      res.send({ ...JSON.parse(data), ...STATUS.ok });
+      res.send({ result: JSON.parse(data), ...STATUS.ok });
     })
     .catch((error) => {
       res.send({ error, ...STATUS.error });
@@ -105,11 +107,17 @@ app.delete('/tests', (req, res) => {
 });
 
 app.get('/run/:solution&:test', (req, res) => {
-  const { solution, test } = req.body;
+  const { solution, test } = req.params;
   const sourceFile = getSourcePath(solution);
   const destDir = getTasksDirPath(solution);
-  mkdir(destDir, { recursive: true });
-  copyFile(sourceFile, path.join(destDir, '/Main.java'))
+  mkdir(destDir, { recursive: true })
+    .then(
+      Promise.all([
+        copyFile(sourceFile, path.join(destDir, '/Main.java')),
+        copyFile(getTestInputPath(test), path.join(destDir, 'input.txt')),
+        copyFile(getTestOutputPath(test), path.join(destDir, 'output.txt')),
+      ]),
+    )
     .then(() => {
       res.send({ ...STATUS.ok });
     })
@@ -118,6 +126,4 @@ app.get('/run/:solution&:test', (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
-});
+app.listen(PORT, () => console.log(`Codejudge server is listening on port ${PORT}`));
