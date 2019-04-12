@@ -9,13 +9,13 @@ const STATUS = {
   error: { status: 'error', statusCode: 1 },
 };
 
-const getTasksDirPath = id => path.join(ROOT_DIR, `./tasks/${id}`);
-const getSolutionsDirPath = id => path.join(ROOT_DIR, `./solutions/${id}`);
-const getTestsDirPath = id => path.join(ROOT_DIR, `./tests/${id}`);
-const getSourcePath = id => path.join(getSolutionsDirPath(id), '/Main.java');
-const getMetaPath = id => path.join(getTasksDirPath(id), '/meta.json');
-const getTestInputPath = id => path.join(getTestsDirPath(id), '/input.txt');
-const getTestOutputPath = id => path.join(getTestsDirPath(id), '/output.txt');
+const getTasksDirPath = id => path.join(ROOT_DIR, `./tasks/${id}/`);
+const getSolutionsDirPath = id => path.join(ROOT_DIR, `./solutions/${id}/`);
+const getTestsDirPath = id => path.join(ROOT_DIR, `./tests/${id}/`);
+const getSourcePath = id => path.join(getSolutionsDirPath(id), 'Main.java');
+const getMetaPath = id => path.join(getTasksDirPath(id), 'meta.json');
+const getTestInputPath = id => path.join(getTestsDirPath(id), 'input.txt');
+const getTestOutputPath = id => path.join(getTestsDirPath(id), 'output.txt');
 
 const createHash = data => crypto
   .createHash('sha1')

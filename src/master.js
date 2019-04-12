@@ -32,7 +32,7 @@ app.post('/solutions', (req, res) => {
     .then(
       Promise.all([
         writeFile(sourceFile, source),
-        writeFile(metaFile, JSON.stringify({ task: 'compile', lang: 'java' })),
+        writeFile(metaFile, JSON.stringify({ ...req.body, task: 'compile' })),
       ]),
     )
     .catch((error) => {
@@ -68,7 +68,7 @@ app.delete('/solutions', (req, res) => {
 
 app.post('/tests', (req, res) => {
   const { input, output } = req.body;
-  const id = createHash(req.body);
+  const id = createHash(JSON.stringify(req.body));
   mkdir(getTestsDirPath(id), { recursive: true })
     .then(
       Promise.all([
@@ -109,11 +109,13 @@ app.delete('/tests', (req, res) => {
 app.get('/run/:solution&:test', (req, res) => {
   const { solution, test } = req.params;
   const sourceFile = getSourcePath(solution);
+  const metaFile = getMetaPath(solution);
   const destDir = getTasksDirPath(solution);
   mkdir(destDir, { recursive: true })
     .then(
       Promise.all([
-        copyFile(sourceFile, path.join(destDir, '/Main.java')),
+        writeFile(metaFile, JSON.stringify({ lang: 'java', task: 'run' })),
+        copyFile(sourceFile, path.join(destDir, 'Main.java')),
         copyFile(getTestInputPath(test), path.join(destDir, 'input.txt')),
         copyFile(getTestOutputPath(test), path.join(destDir, 'output.txt')),
       ]),
