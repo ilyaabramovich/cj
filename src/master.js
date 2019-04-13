@@ -1,7 +1,5 @@
 const path = require('path');
-const {
-  writeFile, readFile, unlink, mkdir, copyFile,
-} = require('fs').promises;
+const { writeFile, readFile, unlink, mkdir } = require('fs').promises;
 const express = require('express');
 const bodyParser = require('body-parser');
 const {
@@ -15,6 +13,7 @@ const {
   getSolutionsDirPath,
   getTestsDirPath,
   getTasksDirPath,
+  copyFiles,
 } = require('./utils');
 
 const app = express();
@@ -22,24 +21,32 @@ app.use(bodyParser.json());
 
 app.post('/solutions', (req, res) => {
   const { source } = req.body;
-  const id = createHash(source);
-  const sourceFile = getSourcePath(id);
-  const metaFile = getMetaPath(id);
-  Promise.all([
-    mkdir(path.dirname(sourceFile), { recursive: true }),
-    mkdir(path.dirname(metaFile), { recursive: true }),
-  ])
-    .then(
+  const id = createHash(JSON.stringify(req.body));
+  const dir = getSolutionsDirPath(id);
+  const taskDir = getTasksDirPath(id);
+  mkdir(dir, { recursive: true })
+    .then(() =>
       Promise.all([
-        writeFile(sourceFile, source),
-        writeFile(metaFile, JSON.stringify({ ...req.body, task: 'compile' })),
-      ]),
+        writeFile(path.join(dir, 'Main.java'), source),
+        writeFile(
+          path.join(dir, 'meta.json'),
+          JSON.stringify({ id, lang: req.body.lang, ...STATUS.queue })
+        ),
+      ])
     )
-    .catch((error) => {
-      res.send({ error, ...STATUS.error });
-    })
+    .then(() =>
+      mkdir(taskDir, { recursive: true }).then(() =>
+        writeFile(
+          path.join(taskDir, 'meta.json'),
+          JSON.stringify({ id, lang: req.body.lang, task: 'compile' })
+        )
+      )
+    )
     .then(() => {
-      res.send({ result: { id }, ...STATUS.ok });
+      res.send({ result: { id }, ...STATUS.queue });
+    })
+    .catch(error => {
+      res.send({ error, ...STATUS.error });
     });
 });
 
@@ -47,10 +54,10 @@ app.get('/solutions/:id', (req, res) => {
   const { id } = req.params;
   const metaFile = getMetaPath(id);
   readFile(metaFile)
-    .then((data) => {
+    .then(data => {
       res.send({ result: JSON.parse(data), ...STATUS.ok });
     })
-    .catch((error) => {
+    .catch(error => {
       res.send({ error, ...STATUS.error });
     });
 });
@@ -61,7 +68,7 @@ app.delete('/solutions', (req, res) => {
     .then(() => {
       res.send({ ...STATUS.ok });
     })
-    .catch((error) => {
+    .catch(error => {
       res.send({ error, ...STATUS.error });
     });
 });
@@ -70,13 +77,13 @@ app.post('/tests', (req, res) => {
   const { input, output } = req.body;
   const id = createHash(JSON.stringify(req.body));
   mkdir(getTestsDirPath(id), { recursive: true })
-    .then(
+    .then(() =>
       Promise.all([
         writeFile(getTestInputPath(id), input),
         writeFile(getTestOutputPath(id), output),
-      ]),
+      ])
     )
-    .catch((error) => {
+    .catch(error => {
       res.send({ error, ...STATUS.error });
     })
     .then(() => {
@@ -87,10 +94,10 @@ app.post('/tests', (req, res) => {
 app.get('/tests/:id', (req, res) => {
   const { id } = req.params;
   readFile(getTestsDirPath(id))
-    .then((data) => {
+    .then(data => {
       res.send({ result: JSON.parse(data), ...STATUS.ok });
     })
-    .catch((error) => {
+    .catch(error => {
       res.send({ error, ...STATUS.error });
     });
 });
@@ -106,26 +113,39 @@ app.delete('/tests', (req, res) => {
     });
 });
 
-app.get('/run/:solution&:test', (req, res) => {
-  const { solution, test } = req.params;
-  const sourceFile = getSourcePath(solution);
-  const metaFile = getMetaPath(solution);
-  const destDir = getTasksDirPath(solution);
+app.get('/run', (req, res) => {
+  const { solution, test } = req.query;
+  const id = createHash(solution + test);
+  const destDir = getTasksDirPath(id);
+  // TODO: создавать runs/{id} здесь (и помещать STATUS - queue)
   mkdir(destDir, { recursive: true })
     .then(
       Promise.all([
-        writeFile(metaFile, JSON.stringify({ lang: 'java', task: 'run' })),
-        copyFile(sourceFile, path.join(destDir, 'Main.java')),
-        copyFile(getTestInputPath(test), path.join(destDir, 'input.txt')),
-        copyFile(getTestOutputPath(test), path.join(destDir, 'output.txt')),
-      ]),
+        writeFile(
+          path.join(destDir, 'meta.json'),
+          // TODO: читать lang из solution
+          JSON.stringify({ lang: 'java', task: 'run', solution, test, id })
+        ), 
+        copyFiles({
+          src: getSolutionsDirPath(solution),
+          dst: destDir,
+          exclude: ['meta.json'],
+        }),
+        copyFiles({
+          src: getTestsDirPath(test),
+          dst: destDir,
+          exclude: ['meta.json'],
+        }),
+      ])
     )
     .then(() => {
       res.send({ ...STATUS.ok });
     })
-    .catch((error) => {
+    .catch(error => {
       res.send({ error, ...STATUS.error });
     });
 });
 
-app.listen(PORT, () => console.log(`Codejudge server is listening on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Codejudge server is listening on port ${PORT}`)
+);
