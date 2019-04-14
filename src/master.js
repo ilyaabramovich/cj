@@ -1,17 +1,16 @@
 const path = require('path');
-const { writeFile, readFile, unlink, mkdir } = require('fs').promises;
+const { writeFile, readFile, mkdir } = require('fs').promises;
 const express = require('express');
 const bodyParser = require('body-parser');
+const util = require('util');
+const rimraf = util.promisify(require('rimraf'));
 const {
   STATUS,
   PORT,
   createHash,
-  getSourcePath,
-  getMetaPath,
-  getTestInputPath,
-  getTestOutputPath,
   getSolutionsDirPath,
   getTestsDirPath,
+  getRunsDirPath,
   getTasksDirPath,
   copyFiles,
 } = require('./utils');
@@ -19,133 +18,131 @@ const {
 const app = express();
 app.use(bodyParser.json());
 
-app.post('/solutions', (req, res) => {
-  const { source } = req.body;
+app.post('/solutions', async (req, res) => {
+  const { source, lang } = req.body;
   const id = createHash(JSON.stringify(req.body));
-  const dir = getSolutionsDirPath(id);
-  const taskDir = getTasksDirPath(id);
-  mkdir(dir, { recursive: true })
-    .then(() =>
-      Promise.all([
-        writeFile(path.join(dir, 'Main.java'), source),
-        writeFile(
-          path.join(dir, 'meta.json'),
-          JSON.stringify({ id, lang: req.body.lang, ...STATUS.queue })
-        ),
-      ])
-    )
-    .then(() =>
-      mkdir(taskDir, { recursive: true }).then(() =>
-        writeFile(
-          path.join(taskDir, 'meta.json'),
-          JSON.stringify({ id, lang: req.body.lang, task: 'compile' })
-        )
-      )
-    )
-    .then(() => {
-      res.send({ result: { id }, ...STATUS.queue });
-    })
-    .catch(error => {
-      res.send({ error, ...STATUS.error });
-    });
+  const solutionsDir = getSolutionsDirPath(id);
+  const tasksDir = getTasksDirPath(id);
+  try {
+    await Promise.all([
+      mkdir(solutionsDir, { recursive: true }),
+      mkdir(tasksDir, { recursive: true }),
+    ]);
+    await Promise.all([
+      writeFile(path.join(solutionsDir, 'Main.java'), source),
+      writeFile(
+        path.join(solutionsDir, 'meta.json'),
+        JSON.stringify({ id, lang, ...STATUS.queue }),
+      ),
+      writeFile(path.join(tasksDir, 'meta.json'), JSON.stringify({ id, lang, task: 'compile' })),
+    ]);
+    res.send({ result: { id }, ...STATUS.queue });
+  } catch (error) {
+    res.send({ error, ...STATUS.error });
+  }
 });
 
-app.get('/solutions/:id', (req, res) => {
-  const { id } = req.params;
-  const metaFile = getMetaPath(id);
-  readFile(metaFile)
-    .then(data => {
-      res.send({ result: JSON.parse(data), ...STATUS.ok });
-    })
-    .catch(error => {
-      res.send({ error, ...STATUS.error });
-    });
+app.get('/solutions/:id', async (req, res) => {
+  try {
+    const data = JSON.parse(await readFile(path.join(getTasksDirPath(req.params.id), 'meta.json')));
+    res.send({ data, ...STATUS.ok });
+  } catch (error) {
+    res.send({ error, ...STATUS.error });
+  }
 });
 
-app.delete('/solutions', (req, res) => {
-  const { id } = req.body;
-  unlink(getSolutionsDirPath(id))
-    .then(() => {
-      res.send({ ...STATUS.ok });
-    })
-    .catch(error => {
-      res.send({ error, ...STATUS.error });
-    });
+app.delete('/solutions/:id', async (req, res) => {
+  try {
+    await rimraf(getSolutionsDirPath(req.params.id));
+    res.send({ ...STATUS.ok });
+  } catch (error) {
+    res.send({ error, ...STATUS.error });
+  }
 });
 
-app.post('/tests', (req, res) => {
+app.post('/tests', async (req, res) => {
   const { input, output } = req.body;
-  const id = createHash(JSON.stringify(req.body));
-  mkdir(getTestsDirPath(id), { recursive: true })
-    .then(() =>
-      Promise.all([
-        writeFile(getTestInputPath(id), input),
-        writeFile(getTestOutputPath(id), output),
-      ])
-    )
-    .catch(error => {
-      res.send({ error, ...STATUS.error });
-    })
-    .then(() => {
-      res.send({ result: { id }, ...STATUS.ok });
-    });
+  const id = createHash(input + output);
+  const testsDir = getTestsDirPath(id);
+  try {
+    await mkdir(testsDir, { recursive: true });
+    await Promise.all([
+      writeFile(path.join(testsDir, 'input.txt'), input),
+      writeFile(path.join(testsDir, 'output.txt'), output),
+    ]);
+    res.send({ id, ...STATUS.ok });
+  } catch (error) {
+    res.send({ error, ...STATUS.error });
+  }
 });
 
-app.get('/tests/:id', (req, res) => {
+app.get('/tests/:id', async (req, res) => {
   const { id } = req.params;
-  readFile(getTestsDirPath(id))
-    .then(data => {
-      res.send({ result: JSON.parse(data), ...STATUS.ok });
-    })
-    .catch(error => {
-      res.send({ error, ...STATUS.error });
-    });
+  try {
+    const [input, output] = await Promise.all([
+      readFile(path.join(getTestsDirPath(id), 'input.txt'), 'utf8'),
+      readFile(path.join(getTestsDirPath(id), 'output.txt'), 'utf8'),
+    ]);
+    res.send({ input, output, ...STATUS.ok });
+  } catch (error) {
+    res.send({ error, ...STATUS.error });
+  }
 });
 
-app.delete('/tests', (req, res) => {
-  const { id } = req.body;
-  unlink(getTestsDirPath(id))
-    .then(() => {
-      res.send({ ...STATUS.ok });
-    })
-    .catch((error) => {
-      res.send({ error, ...STATUS.error });
-    });
+app.delete('/tests/:id', async (req, res) => {
+  try {
+    await rimraf(getTestsDirPath(req.params.id));
+    res.send({ ...STATUS.ok });
+  } catch (error) {
+    res.send({ error, ...STATUS.error });
+  }
 });
 
-app.get('/run', (req, res) => {
+app.get('/run', async (req, res) => {
   const { solution, test } = req.query;
   const id = createHash(solution + test);
-  const destDir = getTasksDirPath(id);
-  // TODO: создавать runs/{id} здесь (и помещать STATUS - queue)
-  mkdir(destDir, { recursive: true })
-    .then(
-      Promise.all([
-        writeFile(
-          path.join(destDir, 'meta.json'),
-          // TODO: читать lang из solution
-          JSON.stringify({ lang: 'java', task: 'run', solution, test, id })
-        ), 
-        copyFiles({
-          src: getSolutionsDirPath(solution),
-          dst: destDir,
-          exclude: ['meta.json'],
+  const tasksDir = getTasksDirPath(id);
+  const runsDir = getRunsDirPath(id);
+  const solutionsDir = getSolutionsDirPath(solution);
+  try {
+    await Promise.all([mkdir(tasksDir, { recursive: true }), mkdir(runsDir, { recursive: true })]);
+    const { lang } = JSON.parse(await readFile(path.join(solutionsDir, 'meta.json')));
+    await Promise.all([
+      writeFile(
+        path.join(tasksDir, 'meta.json'),
+        JSON.stringify({
+          lang,
+          task: 'run',
+          solution,
+          test,
+          id,
         }),
-        copyFiles({
-          src: getTestsDirPath(test),
-          dst: destDir,
-          exclude: ['meta.json'],
+      ),
+      writeFile(
+        path.join(runsDir, 'meta.json'),
+        JSON.stringify({
+          id,
+          lang,
+          solution,
+          test,
+          ...STATUS.queue,
         }),
-      ])
-    )
-    .then(() => {
-      res.send({ ...STATUS.ok });
-    })
-    .catch(error => {
-      res.send({ error, ...STATUS.error });
-    });
+      ),
+      copyFiles({
+        src: solutionsDir,
+        dst: tasksDir,
+        exclude: ['meta.json'],
+      }),
+      copyFiles({
+        src: getTestsDirPath(test),
+        dst: tasksDir,
+        exclude: ['meta.json'],
+      }),
+    ]);
+    res.send({ ...STATUS.ok });
+  } catch (error) {
+    res.send({ error, ...STATUS.error });
+  }
 });
 
-app.listen(PORT, () =>
-  console.log(`Codejudge server is listening on port ${PORT}`)
-);
+app.listen(PORT, () => console.log(`Codejudge server is listening on port ${PORT}`));
