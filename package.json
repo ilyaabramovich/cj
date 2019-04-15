@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/master.js",
   "scripts": {
-    "start": "nodemon src/master.js",
+    "start": "node src/master.js",
+    "dev":"nodemon",
     "start-slave": "src/slave.js",
     "lint": "eslint src/*.js"
   },
