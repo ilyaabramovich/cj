@@ -24,13 +24,15 @@ function taskCompile(dir, meta) {
     exec(
       '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\javac" Main.java',
       { cwd: solutionDir },
-      async (err, stdout, stderr) => {
-        console.log(err, '\n\n', stdout, '\n\n', stderr);
-        if (err) {
+      async (error, stdout, stderr) => {
+        if (error) {
+          console.error(`exec error: ${error}`);
           await updateMeta(solutionDir, STATUS.error);
           await rimraf(dir);
-          return reject(err);
+          return reject(error);
         }
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
         await updateMeta(solutionDir, STATUS.ok);
         await rimraf(dir);
         return resolve();
@@ -47,21 +49,23 @@ function taskRun(dir, meta) {
     const cp = exec(
       '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\java" Main',
       { cwd: dir },
-      async (err, stdout, stderr) => {
+      async (error, stdout, stderr) => {
         const output = await readFile(path.join(dir, 'output.txt'), 'utf8');
-        console.log(err, stdout, stderr);
-        if (err) {
+        if (error) {
+          console.error(`exec error: ${error}`);
           await updateMeta(runsDir, STATUS.error);
           await rimraf(dir);
-          return reject(err);
+          return reject(error);
         }
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
         const checkResult = +(output.trim() === stdout.trim());
         await updateMeta(runsDir, { checkResult, ...STATUS.ok });
         await rimraf(dir);
         return resolve();
       },
     );
-    const input = await readFile(path.join(dir, 'input.txt'));
+    const input = await readFile(path.join(dir, 'input.txt'), 'utf8');
     cp.stdin.write(input);
     cp.stdin.end();
   });
