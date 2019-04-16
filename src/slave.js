@@ -42,9 +42,9 @@ function taskCompile(dir, meta) {
 }
 
 function taskRun(dir, meta) {
-  const runsDir = getRunsDirPath(meta.id);
-  console.log('running...');
   return new Promise(async (resolve, reject) => {
+    const runsDir = getRunsDirPath(meta.id);
+    console.log('running...');
     await updateMeta(runsDir, STATUS.processing);
     const cp = exec(
       '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\java" Main',
@@ -68,6 +68,47 @@ function taskRun(dir, meta) {
     const input = await readFile(path.join(dir, 'input.txt'), 'utf8');
     cp.stdin.write(input);
     cp.stdin.end();
+  });
+}
+
+function processTask(dir, meta, task) {
+  let sourceDir;
+  let execPath;
+  return new Promise(async (resolve, reject) => {
+    if (task === 'run') {
+      sourceDir = getRunsDirPath(meta.id);
+      console.log('running...');
+      execPath = '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\java" Main';
+    } else if (task === 'compile') {
+      sourceDir = getSolutionsDirPath(meta.id);
+      console.log('compiling...');
+      execPath = '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\javac" Main.java';
+    }
+    await updateMeta(sourceDir, STATUS.processing);
+    const cp = exec(execPath, { cwd: dir }, async (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        await updateMeta(sourceDir, STATUS.error);
+        await rimraf(dir);
+        return reject(error);
+      }
+      console.log(`stdout: ${stdout}`);
+      console.log(`stderr: ${stderr}`);
+      if (task === 'run') {
+        const output = await readFile(path.join(dir, 'output.txt'), 'utf8');
+        const checkResult = +(output.trim() === stdout.trim());
+        await updateMeta(sourceDir, { checkResult, ...STATUS.ok });
+      } else if (task === 'compile') {
+        await updateMeta(sourceDir, STATUS.ok);
+      }
+      await rimraf(dir);
+      return resolve();
+    });
+    if (task === 'run') {
+      const input = await readFile(path.join(dir, 'input.txt'), 'utf8');
+      cp.stdin.write(input);
+      cp.stdin.end();
+    }
   });
 }
 
