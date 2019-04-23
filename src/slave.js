@@ -5,7 +5,7 @@ const chokidar = require('chokidar');
 const path = require('path');
 const { exec } = require('child_process');
 const {
-  getTasksDirPath, getRunsDirPath, getSolutionsDirPath, STATUS,
+  getTasksDirPath, getRunsDirPath, getSolutionsDirPath, STATUS, logger, sleep,
 } = require('./utils');
 
 async function updateMeta(dir, patch) {
@@ -14,78 +14,27 @@ async function updateMeta(dir, patch) {
   return writeFile(metaFile, JSON.stringify({ ...meta, ...patch }));
 }
 
-// TODO: generalize taskCompile & taskRun
 // TODO: добавить больше логирования (подключиь библиотеку для логирования?)
-function taskCompile(dir, meta) {
-  return new Promise(async (resolve, reject) => {
-    console.log('compiling...');
-    const solutionDir = getSolutionsDirPath(meta.id);
-    await updateMeta(solutionDir, STATUS.processing);
-    exec(
-      '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\javac" Main.java',
-      { cwd: solutionDir },
-      async (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          await updateMeta(solutionDir, STATUS.error);
-          await rimraf(dir);
-          return reject(error);
-        }
-        console.log(`stdout: ${stdout}`);
-        console.log(`stderr: ${stderr}`);
-        await updateMeta(solutionDir, STATUS.ok);
-        await rimraf(dir);
-        return resolve();
-      },
-    );
-  });
-}
-
-function taskRun(dir, meta) {
-  return new Promise(async (resolve, reject) => {
-    const runsDir = getRunsDirPath(meta.id);
-    console.log('running...');
-    await updateMeta(runsDir, STATUS.processing);
-    const cp = exec(
-      '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\java" Main',
-      { cwd: dir },
-      async (error, stdout, stderr) => {
-        const output = await readFile(path.join(dir, 'output.txt'), 'utf8');
-        if (error) {
-          console.error(`exec error: ${error}`);
-          await updateMeta(runsDir, STATUS.error);
-          await rimraf(dir);
-          return reject(error);
-        }
-        console.log(`stdout: ${stdout}`);
-        console.log(`stderr: ${stderr}`);
-        const checkResult = +(output.trim() === stdout.trim());
-        await updateMeta(runsDir, { checkResult, ...STATUS.ok });
-        await rimraf(dir);
-        return resolve();
-      },
-    );
-    const input = await readFile(path.join(dir, 'input.txt'), 'utf8');
-    cp.stdin.write(input);
-    cp.stdin.end();
-  });
-}
-
-function processTask(dir, meta, task) {
+function processTask(dir, meta) {
+  const { task, id } = meta;
   let sourceDir;
   let execPath;
+  let options;
   return new Promise(async (resolve, reject) => {
-    if (task === 'run') {
-      sourceDir = getRunsDirPath(meta.id);
-      console.log('running...');
-      execPath = '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\java" Main';
-    } else if (task === 'compile') {
-      sourceDir = getSolutionsDirPath(meta.id);
+    if (task === 'compile') {
+      sourceDir = getSolutionsDirPath(id);
       console.log('compiling...');
       execPath = '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\javac" Main.java';
+      options = { cwd: sourceDir };
+    }
+    if (task === 'run') {
+      sourceDir = getRunsDirPath(id);
+      console.log('running...');
+      execPath = '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\java" Main';
+      options = { cwd: dir };
     }
     await updateMeta(sourceDir, STATUS.processing);
-    const cp = exec(execPath, { cwd: dir }, async (error, stdout, stderr) => {
+    const cp = exec(execPath, options, async (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
         await updateMeta(sourceDir, STATUS.error);
@@ -94,12 +43,13 @@ function processTask(dir, meta, task) {
       }
       console.log(`stdout: ${stdout}`);
       console.log(`stderr: ${stderr}`);
+      if (task === 'compile') {
+        await updateMeta(sourceDir, STATUS.ok);
+      }
       if (task === 'run') {
         const output = await readFile(path.join(dir, 'output.txt'), 'utf8');
         const checkResult = +(output.trim() === stdout.trim());
         await updateMeta(sourceDir, { checkResult, ...STATUS.ok });
-      } else if (task === 'compile') {
-        await updateMeta(sourceDir, STATUS.ok);
       }
       await rimraf(dir);
       return resolve();
@@ -112,21 +62,14 @@ function processTask(dir, meta, task) {
   });
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(), ms);
-  });
-}
-
 async function main() {
   const watcher = chokidar.watch(getTasksDirPath(), { usePolling: true });
-  watcher.on('addDir', async (fileName) => {
-    console.log(fileName);
+  watcher.on('addDir', async (dirName) => {
+    console.log(dirName);
     await sleep(1000);
-    const meta = JSON.parse(await readFile(path.join(fileName, 'meta.json')));
+    const meta = JSON.parse(await readFile(path.join(dirName, 'meta.json')));
     console.log(meta);
-    if (meta.task === 'compile') await taskCompile(fileName, meta);
-    else if (meta.task === 'run') await taskRun(fileName, meta);
+    await processTask(dirName, meta);
   });
 }
 
