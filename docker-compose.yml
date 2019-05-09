@@ -1,0 +1,26 @@
+version: '2.1'
+
+services:
+  master:
+    build:
+      context: .
+      dockerfile: master/Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000
+    volumes:
+      - ./runtime/runs:/runs
+      - ./runtime/tests:/tests
+      - ./runtime/solutions:/solutions
+      - ./runtime/tasks:/tasks
+  slave:
+    build:
+      context: .
+      dockerfile: slave/Dockerfile
+    privileged: true
+    volumes:
+      - ./runtime/runs:/runs
+      - ./runtime/tests:/tests
+      - ./runtime/solutions:/solutions
+      - ./runtime/tasks:/tasks
