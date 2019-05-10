@@ -15,7 +15,6 @@ services:
       - ./runtime/solutions:/usr/src/app/solutions
       - ./runtime/tasks:/usr/src/app/tasks
   slave:
-    image: nsjail
     build:
       context: .
       dockerfile: slave/Dockerfile
