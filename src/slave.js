@@ -5,11 +5,7 @@ const chokidar = require('chokidar');
 const path = require('path');
 const { exec } = require('child_process');
 const {
-  getTasksDirPath,
-  getRunsDirPath,
-  getSolutionsDirPath,
-  STATUS,
-  logger,
+ getTasksDirPath, getRunsDirPath, getSolutionsDirPath, STATUS, logger 
 } = require('./utils');
 
 async function updateMeta(dir, patch) {
@@ -28,12 +24,12 @@ function processTask(dir, meta) {
     if (task === 'compile') {
       sourceDir = getSolutionsDirPath(id);
       logger.info('compiling...');
-      execPath = '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\javac" Main.java';
+      execPath = 'javac Main.java';
       options = { cwd: sourceDir };
     } else if (task === 'run') {
       sourceDir = getRunsDirPath(id);
       logger.info('running...');
-      execPath = '"C:\\Program Files\\Java\\jdk-11.0.2\\bin\\java" Main';
+      execPath = 'java Main';
       options = { cwd: dir };
     }
     await updateMeta(sourceDir, STATUS.processing);
