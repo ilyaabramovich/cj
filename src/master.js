@@ -1,7 +1,5 @@
 const path = require('path');
-const {
-  writeFile, readFile, mkdir, access,
-} = require('fs').promises;
+const { writeFile, readFile, mkdir, access } = require('fs').promises;
 const express = require('express');
 const bodyParser = require('body-parser');
 const util = require('util');
@@ -27,7 +25,7 @@ app.post('/solutions', async (req, res) => {
   const solutionDir = getSolutionsDirPath(id);
   try {
     await access(solutionDir);
-    logger.info('Duplicate solution');
+    logger.info('Recieved duplicate solution');
     return res.send({ id, ...STATUS.queue });
   } catch (err) {
     const taskDir = getTasksDirPath(id);
@@ -40,12 +38,17 @@ app.post('/solutions', async (req, res) => {
         writeFile(path.join(solutionDir, 'Main.java'), source),
         writeFile(
           path.join(solutionDir, 'meta.json'),
-          JSON.stringify({ id, lang, ...STATUS.queue }),
+          JSON.stringify({ id, lang, ...STATUS.queue })
         ),
-        writeFile(path.join(taskDir, 'meta.json'), JSON.stringify({ id, lang, task: 'compile' })),
+        writeFile(
+          path.join(taskDir, 'meta.json'),
+          JSON.stringify({ id, lang, task: 'compile' })
+        ),
       ]);
+      logger.info(`Solution ${id} has been added`);
       return res.send({ id, ...STATUS.queue });
     } catch (error) {
+      logger.error(`Error while trying to add solution: ${error}`);
       return res.send({ error, ...STATUS.error });
     }
   }
@@ -53,7 +56,9 @@ app.post('/solutions', async (req, res) => {
 
 app.get('/solutions/:id', async (req, res) => {
   try {
-    const data = JSON.parse(await readFile(path.join(getTasksDirPath(req.params.id), 'meta.json')));
+    const data = JSON.parse(
+      await readFile(path.join(getSolutionsDirPath(req.params.id), 'meta.json'))
+    );
     res.send({ data, ...STATUS.ok });
   } catch (error) {
     res.send({ error, ...STATUS.error });
@@ -75,7 +80,7 @@ app.post('/tests', async (req, res) => {
   const testDir = getTestsDirPath(id);
   try {
     await access(testDir);
-    logger.info('Duplicate test');
+    logger.info('Recieved duplicate test');
     return res.send({ id, ...STATUS.ok });
   } catch (err) {
     try {
@@ -84,10 +89,10 @@ app.post('/tests', async (req, res) => {
         writeFile(path.join(testDir, 'input.txt'), input),
         writeFile(path.join(testDir, 'output.txt'), output),
       ]);
-      logger.info('Test has been added');
+      logger.info(`Test ${id} has been added`);
       return res.send({ id, ...STATUS.ok });
     } catch (error) {
-      logger.error('Error while trying to add new test', error);
+      logger.error(`Error while trying to add test: ${error}`);
       return res.send({ error, ...STATUS.error });
     }
   }
@@ -127,8 +132,13 @@ app.get('/run', async (req, res) => {
   } catch (err) {
     const solutionDir = getSolutionsDirPath(solution);
     try {
-      await Promise.all([mkdir(taskDir, { recursive: true }), mkdir(runDir, { recursive: true })]);
-      const { lang } = JSON.parse(await readFile(path.join(solutionDir, 'meta.json')));
+      await Promise.all([
+        mkdir(taskDir, { recursive: true }),
+        mkdir(runDir, { recursive: true }),
+      ]);
+      const { lang } = JSON.parse(
+        await readFile(path.join(solutionDir, 'meta.json'))
+      );
       await Promise.all([
         writeFile(
           path.join(taskDir, 'meta.json'),
@@ -138,7 +148,7 @@ app.get('/run', async (req, res) => {
             solution,
             test,
             id,
-          }),
+          })
         ),
         writeFile(
           path.join(runDir, 'meta.json'),
@@ -148,7 +158,7 @@ app.get('/run', async (req, res) => {
             solution,
             test,
             ...STATUS.queue,
-          }),
+          })
         ),
         copyFiles({
           src: solutionDir,
@@ -168,4 +178,6 @@ app.get('/run', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => logger.info(`Codejudge server is listening on port ${PORT}`));
+app.listen(PORT, () =>
+  logger.info(`Codejudge server is listening on port ${PORT}`)
+);
