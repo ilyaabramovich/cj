@@ -1,5 +1,7 @@
 const path = require('path');
-const { writeFile, readFile, mkdir, access } = require('fs').promises;
+const {
+  writeFile, readFile, mkdir, access,
+} = require('fs').promises;
 const express = require('express');
 const bodyParser = require('body-parser');
 const util = require('util');
@@ -38,11 +40,11 @@ app.post('/solutions', async (req, res) => {
         writeFile(path.join(solutionDir, 'Main.java'), source),
         writeFile(
           path.join(solutionDir, 'meta.json'),
-          JSON.stringify({ id, lang, ...STATUS.queue })
+          JSON.stringify({ id, lang, ...STATUS.queue }),
         ),
         writeFile(
           path.join(taskDir, 'meta.json'),
-          JSON.stringify({ id, lang, task: 'compile' })
+          JSON.stringify({ id, lang, task: 'compile' }),
         ),
       ]);
       logger.info(`Solution ${id} has been added`);
@@ -57,7 +59,7 @@ app.post('/solutions', async (req, res) => {
 app.get('/solutions/:id', async (req, res) => {
   try {
     const data = JSON.parse(
-      await readFile(path.join(getSolutionsDirPath(req.params.id), 'meta.json'))
+      await readFile(path.join(getSolutionsDirPath(req.params.id), 'meta.json')),
     );
     res.send({ data, ...STATUS.ok });
   } catch (error) {
@@ -66,10 +68,13 @@ app.get('/solutions/:id', async (req, res) => {
 });
 
 app.delete('/solutions/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    await rimraf(getSolutionsDirPath(req.params.id));
+    await rimraf(getSolutionsDirPath(id));
+    logger.info(`Solution ${id} has been deleted`);
     res.send({ ...STATUS.ok });
   } catch (error) {
+    logger.error(`Error while trying to delete solution: ${error}`);
     res.send({ error, ...STATUS.error });
   }
 });
@@ -112,10 +117,13 @@ app.get('/tests/:id', async (req, res) => {
 });
 
 app.delete('/tests/:id', async (req, res) => {
+  const { id } = req.params;
   try {
-    await rimraf(getTestsDirPath(req.params.id));
+    await rimraf(getTestsDirPath(id));
+    logger.info(`Test ${id} has been deleted`);
     res.send({ ...STATUS.ok });
   } catch (error) {
+    logger.error(`Error while trying to delete test: ${error}`);
     res.send({ error, ...STATUS.error });
   }
 });
@@ -137,7 +145,7 @@ app.get('/run', async (req, res) => {
         mkdir(runDir, { recursive: true }),
       ]);
       const { lang } = JSON.parse(
-        await readFile(path.join(solutionDir, 'meta.json'))
+        await readFile(path.join(solutionDir, 'meta.json')),
       );
       await Promise.all([
         writeFile(
@@ -148,7 +156,7 @@ app.get('/run', async (req, res) => {
             solution,
             test,
             id,
-          })
+          }),
         ),
         writeFile(
           path.join(runDir, 'meta.json'),
@@ -158,7 +166,7 @@ app.get('/run', async (req, res) => {
             solution,
             test,
             ...STATUS.queue,
-          })
+          }),
         ),
         copyFiles({
           src: solutionDir,
@@ -171,13 +179,13 @@ app.get('/run', async (req, res) => {
           exclude: ['meta.json'],
         }),
       ]);
+      logger.info(`Run ${id} has been added`);
       return res.send({ ...STATUS.ok });
     } catch (error) {
+      logger.error(`Error while trying to add run: ${error}`);
       return res.send({ error, ...STATUS.error });
     }
   }
 });
 
-app.listen(PORT, () =>
-  logger.info(`Codejudge server is listening on port ${PORT}`)
-);
+app.listen(PORT, () => logger.info(`Codejudge server is listening on port ${PORT}`));
