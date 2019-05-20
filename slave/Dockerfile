@@ -1,20 +1,12 @@
-# FROM nsjail:latest
-
-# RUN "mkdir -p /arch/nsjail_cfgs"
-# COPY ./nsjail_cfgs /arch/nsjail_cfgs
-# COPY src/slave.js /arch
-
-# WORKDIR /arch/slave
-
-# CMD ["node", "master.js"]
-# FROM nsjail
-FROM node:latest
+FROM nsjail
 ENV NODE_ENV production
 RUN apt-get update && apt-get install -y default-jdk
-RUN mkdir -p /arch/slave
-WORKDIR /arch/slave
+RUN apt-get install -y curl python-software-properties
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN apt-get install -y nodejs
+WORKDIR /usr/src/app
 COPY ["package.json", "yarn.lock", "./"]
-RUN yarn install --production --silent
+RUN npm install --production --silent && mv node_modules ../
 COPY nsjail_cfgs .
 COPY ["src/slave.js", "src/utils.js", "./src/"]
 CMD ["node", "src/slave.js"]

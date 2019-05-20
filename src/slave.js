@@ -24,7 +24,7 @@ function processTask(dir, meta) {
     if (task === 'compile') {
       sourceDir = getSolutionsDirPath(id);
       logger.info('compiling...');
-      execPath = 'javac Main.java';
+      execPath = `nsjail -v --cwd=/usr/src/app/solutions/${id} --config /usr/src/app/java.cfg -- /usr/bin/javac ./usr/src/app/solutions/${id}/Main.java`;
       options = { cwd: sourceDir };
     } else if (task === 'run') {
       sourceDir = getRunsDirPath(id);

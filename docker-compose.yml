@@ -20,7 +20,7 @@ services:
       dockerfile: slave/Dockerfile
     privileged: true
     volumes:
-      - ./runtime/runs:/arch/slave/runs
-      - ./runtime/tests:/arch/slave/tests
-      - ./runtime/solutions:/arch/slave/solutions
-      - ./runtime/tasks:/arch/slave/tasks
+      - ./runtime/runs:/usr/src/app/runs
+      - ./runtime/tests:/usr/src/app/tests
+      - ./runtime/solutions:/usr/src/app/solutions
+      - ./runtime/tasks:/usr/src/app/tasks
