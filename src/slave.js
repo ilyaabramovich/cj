@@ -65,14 +65,15 @@ async function main() {
     usePolling: true,
     interval: 100,
     ignoreInitial: true,
-    ignored: /[\/\\]\./,
+    ignored: /[/\\]\./,
     persistent: true,
   });
-  watcher.on('addDir', async (dirName) => {
-    logger.info(`Directory ${dirName} has been added`);
-    const meta = JSON.parse(await readFile(path.join(dirName, 'meta.json')));
-    await processTask(dirName, meta);
-  });
+  watcher
+    .on('addDir', async (dirName) => {
+      const meta = JSON.parse(await readFile(path.join(dirName, 'meta.json')));
+      await processTask(dirName, meta);
+    })
+    .on('error', error => logger.error(`Watcher error: ${error}`));
 }
 
 main();
