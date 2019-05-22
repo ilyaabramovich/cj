@@ -3,7 +3,6 @@ const {
   writeFile, readFile, mkdir, access,
 } = require('fs').promises;
 const express = require('express');
-const bodyParser = require('body-parser');
 const util = require('util');
 const rimraf = util.promisify(require('rimraf'));
 const {
@@ -19,7 +18,7 @@ const {
 } = require('./utils');
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
 app.post('/solutions', async (req, res) => {
   const { source, lang } = req.body;

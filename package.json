@@ -13,7 +13,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.18.3",
     "chokidar": "^2.1.5",
     "express": "^4.16.4",
     "rimraf": "^2.6.3",
