@@ -20,10 +20,10 @@ const logger = createLogger({
     // - Write all logs error (and below) to `error.log`.
     //
     new transports.File({
-      filename: path.join(__dirname, '..', 'logs', 'error.log'),
+      filename: 'error.log',
       level: 'error',
     }),
-    new transports.File({ filename: path.join(__dirname, '..', 'logs', 'combined.log') }),
+    new transports.File({ filename: 'combined.log' }),
   ],
 });
 
@@ -32,15 +32,15 @@ const logger = createLogger({
 // `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
 //
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new transports.Console({
-      format: format.simple(),
-    }),
-  );
+  logger.add(new transports.Console({
+    format: format.combine(
+      format.colorize(),
+      format.simple(),
+    ),
+  }));
 }
 
 const ROOT_DIR = path.join(__dirname, '..');
-const PORT = 3000;
 
 const STATUS = {
   ok: { status: 'ok', statusCode: 0 },
@@ -80,7 +80,6 @@ module.exports = {
   getRunsDirPath,
   copyFiles,
   STATUS,
-  PORT,
   logger,
   ROOT_DIR,
 };
