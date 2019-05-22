@@ -7,7 +7,6 @@ const util = require('util');
 const rimraf = util.promisify(require('rimraf'));
 const {
   STATUS,
-  PORT,
   createHash,
   getSolutionsDirPath,
   getTestsDirPath,
@@ -191,4 +190,4 @@ app.post('/runs', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Codejudge server is listening on port ${PORT}`));
+app.listen(3000, () => console.log('Codejudge server is listening on port 3000!'));
