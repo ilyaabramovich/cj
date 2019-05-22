@@ -128,7 +128,19 @@ app.delete('/tests/:id', async (req, res) => {
   }
 });
 
-app.get('/run', async (req, res) => {
+app.get('/runs/:id', async (req, res) => {
+  const { id } = req.params;
+  const meta = path.join(getRunsDirPath(id), 'meta.json');
+  try {
+    await access(meta);
+    res.sendFile(meta);
+  } catch (error) {
+    logger.error(`Error while trying to get run info: ${error}`);
+    res.send({ error, ...STATUS.error });
+  }
+});
+
+app.post('/runs', async (req, res) => {
   const { solution, test } = req.query;
   const id = createHash(solution + test);
   const taskDir = getTasksDirPath(id);
@@ -180,7 +192,7 @@ app.get('/run', async (req, res) => {
         }),
       ]);
       logger.info(`Run ${id} has been added`);
-      return res.send({ ...STATUS.ok });
+      return res.send({ id, ...STATUS.ok });
     } catch (error) {
       logger.error(`Error while trying to add run: ${error}`);
       return res.send({ error, ...STATUS.error });

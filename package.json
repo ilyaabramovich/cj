@@ -5,8 +5,8 @@
   "main": "src/master.js",
   "scripts": {
     "start": "node src/master.js",
-    "dev": "nodemon",
-    "start-slave": "src/slave.js",
+    "dev": "nodemon src/master.js",
+    "start-slave": "node src/slave.js",
     "lint": "eslint src/*.js"
   },
   "keywords": [],
