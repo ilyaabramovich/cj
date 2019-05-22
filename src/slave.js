@@ -5,7 +5,12 @@ const chokidar = require('chokidar');
 const path = require('path');
 const { exec } = require('child_process');
 const {
-  getTasksDirPath, getRunsDirPath, getSolutionsDirPath, STATUS, logger, ROOT_DIR,
+  getTasksDirPath,
+  getRunsDirPath,
+  getSolutionsDirPath,
+  STATUS,
+  logger,
+  ROOT_DIR,
 } = require('./utils');
 
 async function updateMeta(dir, patch) {
