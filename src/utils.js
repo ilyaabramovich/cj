@@ -82,4 +82,5 @@ module.exports = {
   STATUS,
   PORT,
   logger,
+  ROOT_DIR,
 };

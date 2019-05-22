@@ -5,7 +5,7 @@ const chokidar = require('chokidar');
 const path = require('path');
 const { exec } = require('child_process');
 const {
-  getTasksDirPath, getRunsDirPath, getSolutionsDirPath, STATUS, logger,
+  getTasksDirPath, getRunsDirPath, getSolutionsDirPath, STATUS, logger, ROOT_DIR,
 } = require('./utils');
 
 async function updateMeta(dir, patch) {
@@ -24,12 +24,12 @@ function processTask(dir, meta) {
     if (task === 'compile') {
       sourceDir = getSolutionsDirPath(id);
       logger.info('compiling...');
-      execPath = `nsjail -v --cwd=/usr/src/app/solutions/${id} --config /usr/src/app/java.cfg -- /usr/bin/javac ./usr/src/app/solutions/${id}/Main.java`;
+      execPath = `nsjail -v --cwd=${sourceDir} --config ${ROOT_DIR}/java.cfg -- /usr/bin/javac ${sourceDir}/Main.java`;
       options = { cwd: sourceDir };
     } else if (task === 'run') {
       sourceDir = getRunsDirPath(id);
       logger.info('running...');
-      execPath = 'java Main';
+      execPath = `nsjail -v --cwd=${dir} --config ${ROOT_DIR}/java.cfg -- /usr/bin/java -cp ${dir} Main`;
       options = { cwd: dir };
     }
     await updateMeta(sourceDir, STATUS.processing);
