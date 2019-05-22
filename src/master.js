@@ -42,16 +42,13 @@ app.post('/solutions', async (req, res) => {
           path.join(solutionDir, 'meta.json'),
           JSON.stringify({ id, lang, ...STATUS.queue }),
         ),
-        writeFile(
-          path.join(taskDir, 'meta.json'),
-          JSON.stringify({ id, lang, task: 'compile' }),
-        ),
+        writeFile(path.join(taskDir, 'meta.json'), JSON.stringify({ id, lang, task: 'compile' })),
       ]);
       logger.info(`Solution ${id} has been added`);
       return res.send({ id, ...STATUS.queue });
     } catch (error) {
       logger.error(`Error while trying to add solution: ${error}`);
-      return res.send({ error, ...STATUS.error });
+      return res.send({ error: 'Something went wrong!', ...STATUS.error });
     }
   }
 });
@@ -63,7 +60,7 @@ app.get('/solutions/:id', async (req, res) => {
     );
     res.send({ data, ...STATUS.ok });
   } catch (error) {
-    res.send({ error, ...STATUS.error });
+    res.status(404).send({ error: 'The solution with the given id was not found.', ...STATUS.error });
   }
 });
 
@@ -75,7 +72,7 @@ app.delete('/solutions/:id', async (req, res) => {
     res.send({ ...STATUS.ok });
   } catch (error) {
     logger.error(`Error while trying to delete solution: ${error}`);
-    res.send({ error, ...STATUS.error });
+    res.status(404).send({ error: 'The solution with the given id was not found.', ...STATUS.error });
   }
 });
 
@@ -98,7 +95,7 @@ app.post('/tests', async (req, res) => {
       return res.send({ id, ...STATUS.ok });
     } catch (error) {
       logger.error(`Error while trying to add test: ${error}`);
-      return res.send({ error, ...STATUS.error });
+      return res.send({ error: 'Something went wrong!', ...STATUS.error });
     }
   }
 });
@@ -112,7 +109,7 @@ app.get('/tests/:id', async (req, res) => {
     ]);
     res.send({ input, output, ...STATUS.ok });
   } catch (error) {
-    res.send({ error, ...STATUS.error });
+    res.status(404).send({ error: 'The test with the given id was not found.', ...STATUS.error });
   }
 });
 
@@ -124,7 +121,7 @@ app.delete('/tests/:id', async (req, res) => {
     res.send({ ...STATUS.ok });
   } catch (error) {
     logger.error(`Error while trying to delete test: ${error}`);
-    res.send({ error, ...STATUS.error });
+    res.status(404).send({ error: 'The test with the given id was not found.', ...STATUS.error });
   }
 });
 
@@ -136,7 +133,7 @@ app.get('/runs/:id', async (req, res) => {
     res.sendFile(meta);
   } catch (error) {
     logger.error(`Error while trying to get run info: ${error}`);
-    res.send({ error, ...STATUS.error });
+    res.status(404).send({ error: 'The run with the given id was not found.', ...STATUS.error });
   }
 });
 
@@ -152,13 +149,8 @@ app.post('/runs', async (req, res) => {
   } catch (err) {
     const solutionDir = getSolutionsDirPath(solution);
     try {
-      await Promise.all([
-        mkdir(taskDir, { recursive: true }),
-        mkdir(runDir, { recursive: true }),
-      ]);
-      const { lang } = JSON.parse(
-        await readFile(path.join(solutionDir, 'meta.json')),
-      );
+      await Promise.all([mkdir(taskDir, { recursive: true }), mkdir(runDir, { recursive: true })]);
+      const { lang } = JSON.parse(await readFile(path.join(solutionDir, 'meta.json')));
       await Promise.all([
         writeFile(
           path.join(taskDir, 'meta.json'),
@@ -195,9 +187,9 @@ app.post('/runs', async (req, res) => {
       return res.send({ id, ...STATUS.ok });
     } catch (error) {
       logger.error(`Error while trying to add run: ${error}`);
-      return res.send({ error, ...STATUS.error });
+      return res.send({ error: 'Something went wrong!', ...STATUS.error });
     }
   }
 });
 
-app.listen(PORT, () => logger.info(`Codejudge server is listening on port ${PORT}`));
+app.listen(PORT, () => console.log(`Codejudge server is listening on port ${PORT}`));
