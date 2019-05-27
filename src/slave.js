@@ -9,9 +9,8 @@ const {
   getRunsDirPath,
   getSolutionsDirPath,
   STATUS,
-  logger,
-  ROOT_DIR,
-} = require('./utils');
+} = require('../utils');
+const logger = require('../config/winston');
 
 async function updateMeta(dir, patch) {
   const metaFile = path.join(dir, 'meta.json');
@@ -29,12 +28,12 @@ function processTask(dir, meta) {
     if (task === 'compile') {
       sourceDir = getSolutionsDirPath(id);
       logger.info('compiling...');
-      execPath = `nsjail -v --cwd=${sourceDir} --config ${ROOT_DIR}/java.cfg -- /usr/bin/javac ${sourceDir}/Main.java`;
+      execPath = `nsjail -v --cwd=${sourceDir} --config ${__dirname}/java.cfg -- /usr/bin/javac ${sourceDir}/Main.java`;
       options = { cwd: sourceDir };
     } else if (task === 'run') {
       sourceDir = getRunsDirPath(id);
       logger.info('running...');
-      execPath = `nsjail -v --cwd=${dir} --config ${ROOT_DIR}/java.cfg -- /usr/bin/java -cp ${dir} Main`;
+      execPath = `nsjail -v --cwd=${dir} --config ${__dirname}/java.cfg -- /usr/bin/java -cp ${dir} Main`;
       options = { cwd: dir };
     }
     await updateMeta(sourceDir, STATUS.processing);

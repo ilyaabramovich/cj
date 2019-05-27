@@ -3,5 +3,5 @@ tasks
 tests
 solutions
 runs
-*.log
+logs
 .vscode

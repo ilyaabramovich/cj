@@ -8,5 +8,5 @@ WORKDIR /usr/src/app
 COPY ["package.json", "yarn.lock", "./"]
 RUN npm install --production --silent && mv node_modules ../
 COPY nsjail_cfgs .
-COPY ["src/slave.js", "src/utils.js", "./src/"]
+COPY . .
 CMD ["node", "src/slave.js"]

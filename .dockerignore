@@ -1,0 +1,17 @@
+node_modules
+master
+slave
+runtime
+nsjail
+npm-debug.log
+Dockerfile*
+docker-compose*
+.dockerignore
+.git
+.gitignore
+.env
+*/bin
+*/obj
+README.md
+LICENSE
+.vscode
