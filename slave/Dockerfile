@@ -9,4 +9,4 @@ COPY ["package.json", "yarn.lock", "./"]
 RUN npm install --production --silent && mv node_modules ../
 COPY nsjail_cfgs .
 COPY . .
-CMD ["node", "src/slave.js"]
+CMD ["node", "slave.js"]

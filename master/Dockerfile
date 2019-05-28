@@ -5,4 +5,4 @@ COPY ["package.json", "yarn.lock", "./"]
 RUN yarn install --production --silent && mv node_modules ../
 COPY . .
 EXPOSE 3000
-CMD ["node","src/master.js"]
+CMD ["node","master.js"]

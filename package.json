@@ -1,13 +1,13 @@
 {
-  "name": "master",
+  "name": "cj",
   "version": "1.0.0",
   "description": "",
-  "main": "src/master.js",
+  "main": "master.js",
   "scripts": {
-    "start": "node src/master.js",
-    "dev": "nodemon src/master.js",
-    "start-slave": "node src/slave.js",
-    "lint": "eslint src/*.js"
+    "start": "node master.js",
+    "dev": "nodemon",
+    "start-slave": "node slave.js",
+    "lint": "eslint --ignore-path .gitignore ."
   },
   "keywords": [],
   "author": "",

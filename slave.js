@@ -7,8 +7,8 @@ const {
   getRunsDirPath,
   getSolutionsDirPath,
   STATUS,
-} = require('../utils');
-const logger = require('../config/winston');
+} = require('./utils');
+const logger = require('./config/winston');
 
 async function updateMeta(dir, patch) {
   const metaFile = path.join(dir, 'meta.json');

@@ -1,9 +1,9 @@
 const express = require('express');
 const morgan = require('morgan');
-const winston = require('../config/winston');
-const solutions = require('../routes/solutions');
-const tests = require('../routes/tests');
-const runs = require('../routes/runs');
+const winston = require('./config/winston');
+const solutions = require('./routes/solutions');
+const tests = require('./routes/tests');
+const runs = require('./routes/runs');
 
 const app = express();
 
