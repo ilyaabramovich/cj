@@ -1,12 +1,12 @@
-const express = require('express');
+const express = require('express')
 
-const { errorHandler } = require('../middleware');
-const { postRun, getRun } = require('../controllers/runs');
+const { errorHandler } = require('../middleware')
+const { postRun, getRun } = require('../controllers/runs')
 
-const router = express.Router();
+const router = express.Router()
 
-router.get('/:id', errorHandler(getRun));
+router.get('/:id', errorHandler(getRun))
 
-router.post('/', errorHandler(postRun));
+router.post('/', errorHandler(postRun))
 
-module.exports = router;
+module.exports = router

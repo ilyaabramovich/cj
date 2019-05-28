@@ -1,7 +1,11 @@
-const path = require('path');
+const path = require('path')
 const {
-  writeFile, readFile, mkdirp, createReadStream, pathExists,
-} = require('fs-extra');
+  writeFile,
+  readFile,
+  mkdirp,
+  createReadStream,
+  pathExists
+} = require('fs-extra')
 const {
   STATUS,
   createHash,
@@ -9,31 +13,32 @@ const {
   getTestsDirPath,
   getRunsDirPath,
   getTasksDirPath,
-  copyFiles,
-} = require('../utils');
-const logger = require('../config/winston');
+  copyFiles
+} = require('../utils')
+const logger = require('../config/winston')
 
 module.exports = {
-  getRun(req, res, next) {
-    createReadStream(path.join(getRunsDirPath(req.params.id), 'meta.json')).on('error', err => next(err)).pipe(res);
+  getRun (req, res, next) {
+    createReadStream(path.join(getRunsDirPath(req.params.id), 'meta.json'))
+      .on('error', err => next(err))
+      .pipe(res)
   },
 
-  async postRun(req, res) {
-    const { solution, test } = req.query;
-    const id = createHash(solution + test);
-    const taskDir = getTasksDirPath(id);
-    const runDir = getRunsDirPath(id);
-    const exists = await pathExists(runDir);
+  async postRun (req, res) {
+    const { solution, test } = req.query
+    const id = createHash(solution + test)
+    const taskDir = getTasksDirPath(id)
+    const runDir = getRunsDirPath(id)
+    const exists = await pathExists(runDir)
     if (exists) {
-      logger.info('Duplicate run');
-      return res.send({ id, ...STATUS.ok });
+      logger.info('Duplicate run')
+      return res.send({ id, ...STATUS.ok })
     }
-    const solutionDir = getSolutionsDirPath(solution);
-    await Promise.all([
-      mkdirp(runDir),
-      mkdirp(taskDir),
-    ]);
-    const { lang } = JSON.parse(await readFile(path.join(solutionDir, 'meta.json')));
+    const solutionDir = getSolutionsDirPath(solution)
+    await Promise.all([mkdirp(runDir), mkdirp(taskDir)])
+    const { lang } = JSON.parse(
+      await readFile(path.join(solutionDir, 'meta.json'))
+    )
     await Promise.all([
       writeFile(
         path.join(taskDir, 'meta.json'),
@@ -42,8 +47,8 @@ module.exports = {
           task: 'run',
           solution,
           test,
-          id,
-        }),
+          id
+        })
       ),
       writeFile(
         path.join(runDir, 'meta.json'),
@@ -52,20 +57,20 @@ module.exports = {
           lang,
           solution,
           test,
-          ...STATUS.queue,
-        }),
+          ...STATUS.queue
+        })
       ),
       copyFiles({
         src: solutionDir,
         dst: taskDir,
-        exclude: ['meta.json'],
+        exclude: ['meta.json']
       }),
       copyFiles({
         src: getTestsDirPath(test),
         dst: taskDir,
-        exclude: ['meta.json'],
-      }),
-    ]);
-    return res.send({ id, ...STATUS.ok });
-  },
-};
+        exclude: ['meta.json']
+      })
+    ])
+    return res.send({ id, ...STATUS.ok })
+  }
+}
