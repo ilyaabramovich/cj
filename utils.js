@@ -1,5 +1,5 @@
 const path = require('path');
-const { readdir, symlink } = require('fs').promises;
+const { readdir, symlink } = require('fs-extra');
 const crypto = require('crypto');
 
 const STATUS = {
@@ -19,18 +19,18 @@ const createHash = data => crypto
   .update(data)
   .digest('hex');
 
-async function copyFiles({ src, dst, exclude = [] }) {
+const copyFiles = async ({ src, dst, exclude = [] }) => {
   const files = await readdir(src);
   const filesToCopy = files.filter(file => !exclude.includes(file));
-  await Promise.all(filesToCopy.map(file => symlink(path.join(src, file), path.join(dst, file))));
-}
+  Promise.all(filesToCopy.map(file => symlink(path.join(src, file), path.join(dst, file))));
+};
 
 module.exports = {
+  STATUS,
+  copyFiles,
   createHash,
-  getSolutionsDirPath,
   getTestsDirPath,
   getTasksDirPath,
   getRunsDirPath,
-  copyFiles,
-  STATUS,
+  getSolutionsDirPath,
 };

@@ -6,13 +6,15 @@ const tests = require('../routes/tests');
 const runs = require('../routes/runs');
 
 const app = express();
+
 app.use(express.json());
 app.use(morgan('combined', { stream: winston.stream }));
 app.use('/solutions', solutions);
 app.use('/tests', tests);
 app.use('/runs', runs);
 
-app.use((err, req, res) => {
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -20,7 +22,6 @@ app.use((err, req, res) => {
   // add this line to include winston logging
   winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
 
-  // render the error page
   res.status(err.status || 500);
   res.send('Not found');
 });

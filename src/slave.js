@@ -1,6 +1,4 @@
-const { readFile, writeFile } = require('fs').promises;
-const util = require('util');
-const rimraf = util.promisify(require('rimraf'));
+const { readFile, writeFile, remove } = require('fs-extra');
 const chokidar = require('chokidar');
 const path = require('path');
 const { exec } = require('child_process');
@@ -41,7 +39,7 @@ function processTask(dir, meta) {
       if (error) {
         logger.error(`exec error: ${error}`);
         await updateMeta(sourceDir, STATUS.error);
-        await rimraf(dir);
+        await remove(dir);
         return reject(error);
       }
       if (task === 'compile') {
@@ -53,7 +51,7 @@ function processTask(dir, meta) {
         const checkResult = +(output.trim() === stdout.trim());
         await updateMeta(sourceDir, { checkResult, ...STATUS.ok });
       }
-      await rimraf(dir);
+      await remove(dir);
       return resolve();
     });
     if (task === 'run') {
