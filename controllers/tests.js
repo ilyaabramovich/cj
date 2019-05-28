@@ -36,6 +36,7 @@ module.exports = {
     ]);
     res.send({ input, output, ...STATUS.ok });
   },
+
   async deleteTest(req, res) {
     await remove(getTestsDirPath(req.params.id));
     res.send({ ...STATUS.ok });

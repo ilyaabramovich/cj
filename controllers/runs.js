@@ -17,6 +17,7 @@ module.exports = {
   getRun(req, res, next) {
     createReadStream(path.join(getRunsDirPath(req.params.id), 'meta.json')).on('error', err => next(err)).pipe(res);
   },
+
   async postRun(req, res) {
     const { solution, test } = req.query;
     const id = createHash(solution + test);

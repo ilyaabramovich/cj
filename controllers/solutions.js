@@ -36,12 +36,13 @@ module.exports = {
     ]);
     return res.send({ id, ...STATUS.queue });
   },
+
   getSolution(req, res, next) {
     createReadStream(path.join(getSolutionsDirPath(req.params.id), 'meta.json')).on('error', err => next(err)).pipe(res);
   },
+
   async deleteSolution(req, res) {
-    const { id } = req.params;
-    await remove(getSolutionsDirPath(id));
+    await remove(getSolutionsDirPath(req.params.id));
     res.send({ ...STATUS.ok });
   },
 };
