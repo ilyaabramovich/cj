@@ -13,7 +13,13 @@ app.use('/solutions', solutions)
 app.use('/tests', tests)
 app.use('/runs', runs)
 
-// eslint-disable-next-line no-unused-vars
+// catch 404 and forward to error handler
+app.use((req, res, next) => {
+  const err = new Error('Not Found')
+  err.status = 404
+  next(err)
+})
+
 app.use((err, req, res, next) => {
   // set locals, only providing error in development
   res.locals.message = err.message
@@ -23,7 +29,7 @@ app.use((err, req, res, next) => {
   winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`)
 
   res.status(err.status || 500)
-  res.send('Not found')
+  res.send('Something went wrong')
 })
 
 const port = process.env.PORT || 3000
