@@ -1,7 +1,7 @@
 const express = require('express')
 const morgan = require('morgan')
 const winston = require('./config/winston')
-const solutions = require('./routes/solutions')
+const submissions = require('./routes/submissions')
 const tests = require('./routes/tests')
 const runs = require('./routes/runs')
 
@@ -9,7 +9,7 @@ const app = express()
 
 app.use(express.json())
 app.use(morgan('combined', { stream: winston.stream }))
-app.use('/solutions', solutions)
+app.use('/submissions', submissions)
 app.use('/tests', tests)
 app.use('/runs', runs)
 

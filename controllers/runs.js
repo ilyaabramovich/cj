@@ -9,7 +9,7 @@ const {
 const {
   STATUS,
   createHash,
-  getSolutionsDirPath,
+  getSubmissionsDirPath,
   getTestsDirPath,
   getRunsDirPath,
   getTasksDirPath,
@@ -25,8 +25,8 @@ module.exports = {
   },
 
   async postRun (req, res) {
-    const { solution, test } = req.query
-    const id = createHash(solution + test)
+    const { submission, test } = req.query
+    const id = createHash(submission + test)
     const taskDir = getTasksDirPath(id)
     const runDir = getRunsDirPath(id)
     const exists = await pathExists(runDir)
@@ -34,10 +34,10 @@ module.exports = {
       logger.info('Duplicate run')
       return res.send({ id, ...STATUS.ok })
     }
-    const solutionDir = getSolutionsDirPath(solution)
+    const submissionDir = getSubmissionsDirPath(submission)
     await Promise.all([mkdirp(runDir), mkdirp(taskDir)])
     const { lang } = JSON.parse(
-      await readFile(path.join(solutionDir, 'meta.json'))
+      await readFile(path.join(submissionDir, 'meta.json'))
     )
     await Promise.all([
       writeFile(
@@ -45,7 +45,7 @@ module.exports = {
         JSON.stringify({
           lang,
           task: 'run',
-          solution,
+          submission,
           test,
           id
         })
@@ -55,13 +55,13 @@ module.exports = {
         JSON.stringify({
           id,
           lang,
-          solution,
+          submission,
           test,
           ...STATUS.queue
         })
       ),
       copyFiles({
-        src: solutionDir,
+        src: submissionDir,
         dst: taskDir,
         exclude: ['meta.json']
       }),

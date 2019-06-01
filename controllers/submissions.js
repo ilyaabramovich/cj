@@ -5,31 +5,31 @@ const {
 const {
   STATUS,
   createHash,
-  getSolutionsDirPath,
+  getSubmissionsDirPath,
   getTasksDirPath
 } = require('../utils')
 const logger = require('../config/winston')
 
 module.exports = {
-  async postSolution (req, res) {
+  async postSubmission (req, res) {
     const { source, lang } = req.body
     const id = createHash(JSON.stringify(source + lang))
-    const solutionDir = getSolutionsDirPath(id)
-    const exists = await pathExists(solutionDir)
+    const submissionDir = getSubmissionsDirPath(id)
+    const exists = await pathExists(submissionDir)
     if (exists) {
-      logger.info('Recieved duplicate solution')
+      logger.info('Recieved duplicate submission')
       return res.send({ id, ...STATUS.queue })
     }
     const taskDir = getTasksDirPath(id)
     await Promise.all([
-      mkdirp(solutionDir),
+      mkdirp(submissionDir),
       mkdirp(taskDir)
     ])
 
     await Promise.all([
-      writeFile(path.join(solutionDir, 'Main.java'), source),
+      writeFile(path.join(submissionDir, 'Main.java'), source),
       writeFile(
-        path.join(solutionDir, 'meta.json'),
+        path.join(submissionDir, 'meta.json'),
         JSON.stringify({ id, lang, ...STATUS.queue })
       ),
       writeFile(path.join(taskDir, 'meta.json'), JSON.stringify({ id, lang, task: 'compile' }))
@@ -37,12 +37,12 @@ module.exports = {
     return res.send({ id, ...STATUS.queue })
   },
 
-  getSolution (req, res, next) {
-    createReadStream(path.join(getSolutionsDirPath(req.params.id), 'meta.json')).on('error', err => next(err)).pipe(res)
+  getSubmission (req, res, next) {
+    createReadStream(path.join(getSubmissionsDirPath(req.params.id), 'meta.json')).on('error', err => next(err)).pipe(res)
   },
 
-  async deleteSolution (req, res) {
-    await remove(getSolutionsDirPath(req.params.id))
+  async deleteSubmission (req, res) {
+    await remove(getSubmissionsDirPath(req.params.id))
     res.send({ ...STATUS.ok })
   }
 }

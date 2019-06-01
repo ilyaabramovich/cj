@@ -5,7 +5,7 @@ const { exec } = require('child_process')
 const {
   getTasksDirPath,
   getRunsDirPath,
-  getSolutionsDirPath,
+  getSubmissionsDirPath,
   STATUS
 } = require('./utils')
 const logger = require('./config/winston')
@@ -24,7 +24,7 @@ function processTask (dir, meta) {
   let options
   return new Promise(async (resolve, reject) => {
     if (task === 'compile') {
-      sourceDir = getSolutionsDirPath(id)
+      sourceDir = getSubmissionsDirPath(id)
       logger.info('compiling...')
       execPath = `nsjail -v --cwd=${sourceDir} --config ${__dirname}/java.cfg -- /usr/bin/javac ${sourceDir}/Main.java`
       options = { cwd: sourceDir }

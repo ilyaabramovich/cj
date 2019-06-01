@@ -10,7 +10,7 @@ const STATUS = {
 }
 
 const getTasksDirPath = (id = '') => path.join(__dirname, 'tasks', id)
-const getSolutionsDirPath = id => path.join(__dirname, 'solutions', id)
+const getSubmissionsDirPath = id => path.join(__dirname, 'submissions', id)
 const getRunsDirPath = id => path.join(__dirname, 'runs', id)
 const getTestsDirPath = id => path.join(__dirname, 'tests', id)
 
@@ -32,5 +32,5 @@ module.exports = {
   getTestsDirPath,
   getTasksDirPath,
   getRunsDirPath,
-  getSolutionsDirPath
+  getSubmissionsDirPath
 }
