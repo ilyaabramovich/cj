@@ -1,6 +1,6 @@
 const path = require('path')
 const {
-  writeFile, mkdirp, pathExists, remove
+  writeFile, mkdirp, pathExists, remove, readFile
 } = require('fs-extra')
 const {
   STATUS,
@@ -37,8 +37,8 @@ module.exports = {
     return res.send({ id, ...STATUS.queue })
   },
 
-  getSubmission (req, res, next) {
-    const meta = JSON.parse((path.join(getSubmissionsDirPath(req.params.id), 'meta.json')))
+  async getSubmission (req, res, next) {
+    const meta = JSON.parse(await readFile(path.join(getSubmissionsDirPath(req.params.id), 'meta.json')))
     res.send({ ...meta, ...STATUS.ok })
   },
 

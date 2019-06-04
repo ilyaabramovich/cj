@@ -63,6 +63,7 @@ function processTask (dir, meta) {
 }
 
 async function main () {
+  console.log('Slave is running!')
   const watcher = chokidar.watch(getTasksDirPath(), {
     usePolling: true,
     interval: 100,
