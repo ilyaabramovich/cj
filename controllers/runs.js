@@ -3,7 +3,6 @@ const {
   writeFile,
   readFile,
   mkdirp,
-  createReadStream,
   pathExists
 } = require('fs-extra')
 const {
@@ -18,10 +17,9 @@ const {
 const logger = require('../config/winston')
 
 module.exports = {
-  getRun (req, res, next) {
-    createReadStream(path.join(getRunsDirPath(req.params.id), 'meta.json'))
-      .on('error', err => next(err))
-      .pipe(res)
+  async getRun (req, res, next) {
+    const meta = JSON.parse(await readFile(path.join(getRunsDirPath(req.params.id), 'meta.json')))
+    res.send({ ...meta, ...STATUS.ok })
   },
 
   async postRun (req, res) {
@@ -71,6 +69,6 @@ module.exports = {
         exclude: ['meta.json']
       })
     ])
-    return res.send({ id, ...STATUS.ok })
+    return res.send({ id, ...STATUS.queue })
   }
 }

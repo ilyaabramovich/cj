@@ -1,6 +1,6 @@
 const path = require('path')
 const {
-  writeFile, mkdirp, pathExists, remove, createReadStream
+  writeFile, mkdirp, pathExists, remove
 } = require('fs-extra')
 const {
   STATUS,
@@ -38,7 +38,8 @@ module.exports = {
   },
 
   getSubmission (req, res, next) {
-    createReadStream(path.join(getSubmissionsDirPath(req.params.id), 'meta.json')).on('error', err => next(err)).pipe(res)
+    const meta = JSON.parse((path.join(getSubmissionsDirPath(req.params.id), 'meta.json')))
+    res.send({ ...meta, ...STATUS.ok })
   },
 
   async deleteSubmission (req, res) {

@@ -4,6 +4,7 @@ const winston = require('./config/winston')
 const submissions = require('./routes/submissions')
 const tests = require('./routes/tests')
 const runs = require('./routes/runs')
+const { STATUS } = require('./utils')
 
 const app = express()
 
@@ -20,16 +21,14 @@ app.use((req, res, next) => {
   next(err)
 })
 
-app.use((err, req, res, next) => {
+app.use((error, req, res, next) => {
   // set locals, only providing error in development
-  res.locals.message = err.message
-  res.locals.error = req.app.get('env') === 'development' ? err : {}
+  // res.locals.message = error.message
+  // res.locals.error = req.app.get('env') === 'development' ? error : {}
 
   // add this line to include winston logging
-  winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`)
-
-  res.status(err.status || 500)
-  res.send('Something went wrong')
+  winston.error(`${error.status || 500} - ${error.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`)
+  res.status(error.status || 500).send({ error, ...STATUS.error })
 })
 
 const port = process.env.PORT || 3000
