@@ -1,7 +1,7 @@
 const { readFile, writeFile, remove } = require('fs-extra')
 const chokidar = require('chokidar')
 const path = require('path')
-const { exec } = require('child_process')
+const { spawn } = require('child_process')
 const {
   getTasksDirPath,
   getRunsDirPath,
@@ -19,46 +19,61 @@ async function updateMeta (dir, patch) {
 function processTask (dir, meta) {
   logger.info('Processing task:', meta)
   const { task, id } = meta
-  let sourceDir
-  let execPath
-  let options
+  let sourceDir, args, options
   return new Promise(async (resolve, reject) => {
     if (task === 'compile') {
       sourceDir = getSubmissionsDirPath(id)
       logger.info('compiling...')
-      execPath = `nsjail -v --cwd=${sourceDir} --config ${__dirname}/java.cfg -- /usr/bin/javac ${sourceDir}/Main.java`
+      args = `-Q --cwd=${sourceDir} --config ${__dirname}/java.cfg -- /usr/bin/javac ${sourceDir}/Main.java`
       options = { cwd: sourceDir }
     } else if (task === 'run') {
       sourceDir = getRunsDirPath(id)
       logger.info('running...')
-      execPath = `nsjail -v --cwd=${dir} --config ${__dirname}/java.cfg -- /usr/bin/java -cp ${dir} Main`
+      args = `-Q --cwd=${dir} --config ${__dirname}/java.cfg -- /usr/bin/java -cp ${dir} Main`
       options = { cwd: dir }
     }
     await updateMeta(sourceDir, STATUS.processing)
-    const cp = exec(execPath, options, async (error, stdout, stderr) => {
-      if (error) {
-        logger.error(`exec error: ${error}`)
-        await updateMeta(sourceDir, STATUS.error)
-        await remove(dir)
-        return reject(error)
-      }
-      if (task === 'compile') {
-        await updateMeta(sourceDir, STATUS.ok)
-      } else if (task === 'run') {
-        logger.info(`stdout: ${stdout}`)
-        logger.info(`stderr: ${stderr}`)
-        const output = await readFile(path.join(dir, 'output.txt'), 'utf8')
-        const checkResult = +(output.trim() === stdout.trim())
-        await updateMeta(sourceDir, { checkResult, ...STATUS.ok })
-      }
-      await remove(dir)
-      return resolve()
-    })
+    const chunks = []
+    const errorChunks = []
+    let output, error
+    const cp = spawn('nsjail', args.split(' '), options)
     if (task === 'run') {
       const input = await readFile(path.join(dir, 'input.txt'), 'utf8')
       cp.stdin.write(input)
       cp.stdin.end()
     }
+    cp.stderr.on('data', chunk => {
+      errorChunks.push(chunk)
+    })
+    cp.stderr.on('end', async () => {
+      error = Buffer.concat(errorChunks).toString()
+    })
+    cp.stdout.on('data', chunk => {
+      chunks.push(chunk)
+    })
+    cp.stdout.on('end', async () => {
+      output = Buffer.concat(chunks).toString()
+    })
+    cp.on('exit', async (code) => {
+      if (code === 0) {
+        switch (task) {
+          case 'compile':
+            await updateMeta(sourceDir, STATUS.ok)
+            break
+          case 'run':
+            const expectedOutput = await readFile(path.join(dir, 'output.txt'), 'utf8')
+            const checkResult = expectedOutput.trim() === output.trim()
+            await updateMeta(sourceDir, { checkResult, ...STATUS.ok })
+            break
+          default:
+            break
+        }
+      } else {
+        logger.error(error)
+        await updateMeta(sourceDir, { error, ...STATUS.error })
+      }
+      await remove(dir)
+    })
   })
 }
 
@@ -74,7 +89,10 @@ async function main () {
   watcher
     .on('addDir', async (dirName) => {
       const meta = JSON.parse(await readFile(path.join(dirName, 'meta.json')))
-      await processTask(dirName, meta)
+      try {
+        await processTask(dirName, meta)
+      } catch (error) {
+      }
     })
     .on('error', error => logger.error(`Watcher error: ${error}`))
 }
