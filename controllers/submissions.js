@@ -39,7 +39,7 @@ module.exports = {
 
   async getSubmission (req, res, next) {
     const meta = JSON.parse(await readFile(path.join(getSubmissionsDirPath(req.params.id), 'meta.json')))
-    res.send({ ...meta, ...STATUS.ok })
+    res.send(meta)
   },
 
   async deleteSubmission (req, res) {
