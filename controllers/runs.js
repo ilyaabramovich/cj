@@ -26,21 +26,19 @@ module.exports = {
     const { submission, test } = req.query
     const submissionDir = getSubmissionsDirPath(submission)
     const testDir = getTestsDirPath(test)
-    const testExists = await pathExists(testDir)
     const { lang, statusCode } = JSON.parse(
       await readFile(path.join(submissionDir, 'meta.json'))
     )
-    if (!testExists || !(statusCode === 0)) {
+    if (!(statusCode === 0) || !await pathExists(testDir)) {
       return next()
     }
     const id = createHash(submission + test)
-    const taskDir = getTasksDirPath(id)
     const runDir = getRunsDirPath(id)
-    const exists = await pathExists(runDir)
-    if (exists) {
+    if (await pathExists(runDir)) {
       logger.info('Duplicate run')
       return res.send({ id, ...STATUS.queue })
     }
+    const taskDir = getTasksDirPath(id)
     await Promise.all([mkdirp(runDir), mkdirp(taskDir)])
     await Promise.all([
       writeFile(
@@ -74,6 +72,6 @@ module.exports = {
         exclude: ['meta.json']
       })
     ])
-    return res.send({ id, ...STATUS.queue })
+    res.send({ id, ...STATUS.queue })
   }
 }

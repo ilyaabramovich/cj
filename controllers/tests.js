@@ -25,14 +25,13 @@ module.exports = {
       writeFile(path.join(testDir, 'input.txt'), input),
       writeFile(path.join(testDir, 'output.txt'), output)
     ])
-    return res.send({ id, ...STATUS.ok })
+    res.send({ id, ...STATUS.ok })
   },
 
   async getTest (req, res) {
-    const { id } = req.params
     const [input, output] = await Promise.all([
-      readFile(path.join(getTestsDirPath(id), 'input.txt'), 'utf8'),
-      readFile(path.join(getTestsDirPath(id), 'output.txt'), 'utf8')
+      readFile(path.join(getTestsDirPath(req.params.id), 'input.txt'), 'utf8'),
+      readFile(path.join(getTestsDirPath(req.params.id), 'output.txt'), 'utf8')
     ])
     res.send({ input, output, ...STATUS.ok })
   },

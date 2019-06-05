@@ -62,7 +62,7 @@ function processTask (dir, meta) {
             break
           case 'run':
             const expectedOutput = await readFile(path.join(dir, 'output.txt'), 'utf8')
-            const checkResult = expectedOutput.trim() === output.trim()
+            const checkResult = Number(expectedOutput.trim() === output.trim())
             await updateMeta(sourceDir, { checkResult, ...STATUS.ok })
             break
           default:

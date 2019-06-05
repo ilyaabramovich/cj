@@ -34,7 +34,7 @@ module.exports = {
       ),
       writeFile(path.join(taskDir, 'meta.json'), JSON.stringify({ id, lang, task: 'compile' }))
     ])
-    return res.send({ id, ...STATUS.queue })
+    res.send({ id, ...STATUS.queue })
   },
 
   async getSubmission (req, res, next) {
